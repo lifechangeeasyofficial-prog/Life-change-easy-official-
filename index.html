@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manus Private Storage Server</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --accent-color: #238636;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+            --error-color: #f85149;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: var(--accent-color);
+            padding: 15px 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 { border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        input, textarea {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { opacity: 0.8; }
+        .project-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+        .project-item:hover { background: #21262d; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .green { background-color: var(--accent-color); }
+        .red { background-color: var(--error-color); }
+        .api-key { font-family: monospace; background: #000; padding: 5px; color: #8b949e; }
+        .hidden { display: none; }
+        .tab-editor { font-family: monospace; height: 200px; }
+        .policy-section { font-size: 0.9rem; line-height: 1.6; color: #8b949e; }
+    </style>
+</head>
+<body>
+
+<header>
+    <span>MANUS PRIVATE SERVER</span>
+    <span id="server-status">Online</span>
+</header>
+
+<div class="container">
+    <!-- Project Creation -->
+    <div class="card">
+        <h2>Create New Project</h2>
+        <input type="text" id="proj-name" placeholder="Project Name (e.g., TikTok Pro)">
+        <textarea id="proj-format" placeholder="Data Format (JSON)"></textarea>
+        <button onclick="createProject()">Create Project</button>
+    </div>
+
+    <!-- Project List -->
+    <div class="card">
+        <h2>My Projects</h2>
+        <div id="project-list">
+            <!-- Projects will appear here -->
+        </div>
+    </div>
+
+    <!-- Project Details (Hidden by default) -->
+    <div id="project-details" class="card hidden">
+        <h2 id="detail-name">Project Details</h2>
+        <p><strong>Project ID:</strong> <span id="detail-id" class="api-key"></span></p>
+        <p><strong>API Key:</strong> <span id="detail-key" class="api-key"></span></p>
+        
+        <h3>Tab Editor (Format)</h3>
+        <textarea id="detail-format" class="tab-editor"></textarea>
+        <button onclick="updateFormat()">Save Format</button>
+
+        <h3>Stats & Health</h3>
+        <div id="health-status">
+            <p><span class="status-dot green"></span> Uploads: <span id="stat-uploads">0</span></p>
+            <p><span class="status-dot red"></span> Errors: <span id="stat-errors">0</span></p>
+        </div>
+        
+        <button style="background: #da3633; margin-top: 20px;" onclick="deleteProject()">Delete Project</button>
+        <button style="background: #30363d; margin-top: 20px;" onclick="hideDetails()">Back</button>
+    </div>
+
+    <!-- Instructions / Policy -->
+    <div class="card policy-section">
+        <h2>How to Use (Instructions)</h2>
+        <p><strong>1. Setup:</strong> Server.js ko node se run karein. Ye automatically 'uploads' aur 'data' folders bana dega.</p>
+        <p><strong>2. API Usage:</strong> Naye project banayein aur uska API Key copy karein.</p>
+        <p><strong>3. Uploading:</strong> Apne social media app se <code>POST /api/upload/:projectId</code> par file bhejein (Header mein <code>x-api-key</code> lazmi hai).</p>
+        <p><strong>4. Data Storage:</strong> Metadata ke liye <code>POST /api/data/:projectId</code> use karein.</p>
+        <p><strong>5. Decentralized:</strong> Ye server sirf files host karega, registration aapke blockchain smart contract par hi rahegi.</p>
+    </div>
+</div>
+
+<script>
+    let currentProjectId = null;
+
+    async function fetchProjects() {
+        const res = await fetch('/api/projects');
+        const projects = await res.json();
+        const list = document.getElementById('project-list');
+        list.innerHTML = '';
+        projects.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'project-item';
+            div.innerHTML = `
+                <span>${p.name}</span>
+                <span>${p.stats.uploads} Uploads</span>
+            `;
+            div.onclick = () => showDetails(p);
+            list.appendChild(div);
+        });
+    }
+
+    async function createProject() {
+        const name = document.getElementById('proj-name').value;
+        const format = document.getElementById('proj-format').value;
+        if(!name) return alert('Name please!');
+        
+        await fetch('/api/projects', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, format })
+        });
+        document.getElementById('proj-name').value = '';
+        document.getElementById('proj-format').value = '';
+        fetchProjects();
+    }
+
+    function showDetails(p) {
+        currentProjectId = p.id;
+        document.getElementById('detail-name').innerText = p.name;
+        document.getElementById('detail-id').innerText = p.id;
+        document.getElementById('detail-key').innerText = p.apiKey;
+        document.getElementById('detail-format').value = p.format;
+        document.getElementById('stat-uploads').innerText = p.stats.uploads;
+        document.getElementById('stat-errors').innerText = p.stats.errors;
+        document.getElementById('project-details').classList.remove('hidden');
+    }
+
+    function hideDetails() {
+        document.getElementById('project-details').classList.add('hidden');
+    }
+
+    async function updateFormat() {
+        const format = document.getElementById('detail-format').value;
+        await fetch(`/api/projects/${currentProjectId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ format })
+        });
+        alert('Format Saved!');
+        fetchProjects();
+    }
+
+    async function deleteProject() {
+        if(!confirm('Are you sure?')) return;
+        await fetch(`/api/projects/${currentProjectId}`, { method: 'DELETE' });
+        hideDetails();
+        fetchProjects();
+    }
+
+    fetchProjects();
+</script>
+
+
+  
+</body>
+</html>
