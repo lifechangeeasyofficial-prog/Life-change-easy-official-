@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Manage Your Applications</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            color: #333;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        
+        .file-upload-label {
+            display: block;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 2px dashed #667eea;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .file-upload-label:hover {
+            background: #f0f0f0;
+        }
+        
+        .file-upload.active .file-upload-label {
+            background: #e8e8ff;
+            border-color: #764ba2;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+        
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #ccc;
+        }
+        
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .apps-list {
+            margin-top: 20px;
+        }
+        
+        .app-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .app-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .app-item-info h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .app-item-info p {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .app-item-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-published {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-draft {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .image-preview {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+        
+        .link-section {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .link-section h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .link-display {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+            color: #667eea;
+            font-family: monospace;
+            font-size: 14px;
+            border: 2px solid #667eea;
+        }
+        
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+        
+        .edit-link-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff9e6;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .edit-link-section h5 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .link-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .link-input-group input {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .link-input-group button {
+            padding: 8px 16px;
+            background: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .link-input-group button:hover {
+            background: #ffb300;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎛️ Dashboard</h1>
+            <p>Manage your applications and projects with custom links</p>
+        </header>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="dashboard-grid">
+            <!-- Upload Application Section -->
+            <div class="card">
+                <h2>📦 Upload New Application</h2>
+                
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label>Application Name *</label>
+                        <input type="text" id="appName" required placeholder="Enter application name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="appDescription" required placeholder="Enter application description"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Application Size</label>
+                        <input type="text" id="appSize" placeholder="e.g., 50 MB">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Emoji/Icon</label>
+                        <input type="text" id="appEmoji" placeholder="e.g., 📱" value="📦">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Custom Link (Optional)</label>
+                        <input type="text" id="customLink" placeholder="e.g., lifechangeeasy.io">
+                        <small style="color: #999;">Yeh link aapka project internet par khul jayega</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Upload Application File (ZIP/APK) *</label>
+                        <div class="file-upload" id="fileUpload">
+                            <input type="file" id="appFile" accept=".zip,.apk,.rar,.html" required>
+                            <label class="file-upload-label">
+                                📁 Click to upload or drag & drop
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Upload Screenshots (up to 5)</label>
+                        <div class="file-upload" id="imageUpload">
+                            <input type="file" id="appImages" accept="image/*" multiple>
+                            <label class="file-upload-label">
+                                🖼️ Click to upload screenshots
+                            </label>
+                        </div>
+                        <div class="image-preview" id="imagePreview"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Publish Application</button>
+                </form>
+            </div>
+            
+            <!-- Project Settings Section -->
+            <div class="card">
+                <h2>⚙️ Server Settings</h2>
+                
+                <div class="link-section">
+                    <h4>🔗 Your Server Information</h4>
+                    <p style="color: #666; margin-bottom: 10px;">Jab aap isko Render ya GitHub par host karenge, aapko ek server link milega:</p>
+                    <div class="link-display" id="serverLink">https://your-server.onrender.com</div>
+                    <button class="copy-btn" onclick="copyServerLink()">Copy Server Link</button>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-radius: 5px;">
+                    <h4 style="color: #333; margin-bottom: 10px;">📊 Statistics</h4>
+                    <p><strong>Total Applications:</strong> <span id="totalApps">0</span></p>
+                    <p><strong>Total Downloads:</strong> <span id="totalDownloads">0</span></p>
+                    <p><strong>Total Users:</strong> <span id="totalUsers">0</span></p>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 5px;">
+                    <h4 style="color: #333; margin-bottom: 10px;">💡 Kaise Kaam Karega?</h4>
+                    <p style="color: #666; font-size: 14px; line-height: 1.6;">
+                        Jab aap project upload karenge aur custom link set karenge (jaise lifechangeeasy.io), to woh link aapke server par live ho jayega. Koi bhi us link ko internet mein search karega to aapka project khul jayega!
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Applications List -->
+        <div class="card">
+            <h2>📋 Your Applications</h2>
+            <div id="appsList" class="apps-list"></div>
+        </div>
+    </div>
+    
+    <script>
+        let uploadedApps = [];
+        
+        // File upload drag and drop
+        const fileUpload = document.getElementById('fileUpload');
+        const appFile = document.getElementById('appFile');
+        
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('active');
+        });
+        
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('active');
+        });
+        
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('active');
+            appFile.files = e.dataTransfer.files;
+        });
+        
+        // Image preview
+        document.getElementById('appImages').addEventListener('change', (e) => {
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '';
+            
+            Array.from(e.target.files).slice(0, 5).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+        
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const appData = {
+                id: Date.now().toString(),
+                name: document.getElementById('appName').value,
+                description: document.getElementById('appDescription').value,
+                size: document.getElementById('appSize').value || 'Unknown',
+                emoji: document.getElementById('appEmoji').value || '📦',
+                downloads: 0,
+                users: 0,
+                status: 'published',
+                customLink: document.getElementById('customLink').value || null,
+                createdAt: new Date().toISOString()
+            };
+            
+            uploadedApps.push(appData);
+            
+            // Save to localStorage
+            localStorage.setItem('uploadedApps', JSON.stringify(uploadedApps));
+            
+            showMessage('Application published successfully! ✅', 'success');
+            document.getElementById('uploadForm').reset();
+            document.getElementById('imagePreview').innerHTML = '';
+            
+            loadApps();
+            updateStats();
+        });
+        
+        function loadApps() {
+            const saved = localStorage.getItem('uploadedApps');
+            uploadedApps = saved ? JSON.parse(saved) : [];
+            
+            const appsList = document.getElementById('appsList');
+            
+            if (uploadedApps.length === 0) {
+                appsList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No applications uploaded yet</p>';
+                return;
+            }
+            
+            appsList.innerHTML = uploadedApps.map(app => `
+                <div class="app-item">
+                    <div class="app-item-header">
+                        <div class="app-item-info">
+                            <h3>${app.emoji} ${app.name}</h3>
+                            <p>${app.description.substring(0, 60)}...</p>
+                            <span class="status-badge status-published">Published</span>
+                        </div>
+                    </div>
+                    
+                    ${app.customLink ? `
+                    <div class="link-section">
+                        <strong>🔗 Custom Link:</strong>
+                        <div class="link-display">${app.customLink}</div>
+                        <button class="copy-btn" onclick="copyLink('${app.customLink}')">Copy Link</button>
+                    </div>
+                    ` : `
+                    <div class="edit-link-section">
+                        <h5>⚠️ Koi Custom Link Set Nahi Hai</h5>
+                        <p style="color: #666; font-size: 14px; margin-bottom: 10px;">Is project ke liye custom link set karein taake woh internet par live ho jaye.</p>
+                        <div class="link-input-group">
+                            <input type="text" placeholder="e.g., lifechangeeasy.io" id="link-${app.id}">
+                            <button onclick="updateLink('${app.id}')">Set Link</button>
+                        </div>
+                    </div>
+                    `}
+                    
+                    <div class="app-item-actions" style="margin-top: 10px;">
+                        <button class="btn btn-danger btn-small" onclick="deleteApp('${app.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function updateLink(appId) {
+            const linkInput = document.getElementById(`link-${appId}`);
+            const newLink = linkInput.value.trim();
+            
+            if (!newLink) {
+                showMessage('Please enter a link', 'error');
+                return;
+            }
+            
+            const appIndex = uploadedApps.findIndex(a => a.id === appId);
+            if (appIndex !== -1) {
+                uploadedApps[appIndex].customLink = newLink;
+                localStorage.setItem('uploadedApps', JSON.stringify(uploadedApps));
+                showMessage(`Link updated to: ${newLink} ✅`, 'success');
+                loadApps();
+            }
+        }
+        
+        function deleteApp(id) {
+            if (confirm('Kya aap is application ko delete karna chahte hain?')) {
+                uploadedApps = uploadedApps.filter(app => app.id !== id);
+                localStorage.setItem('uploadedApps', JSON.stringify(uploadedApps));
+                loadApps();
+                updateStats();
+                showMessage('Application deleted', 'success');
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('totalApps').textContent = uploadedApps.length;
+            document.getElementById('totalDownloads').textContent = uploadedApps.reduce((sum, app) => sum + (app.downloads || 0), 0);
+            document.getElementById('totalUsers').textContent = uploadedApps.reduce((sum, app) => sum + (app.users || 0), 0);
+        }
+        
+        function copyLink(link) {
+            navigator.clipboard.writeText(link);
+            showMessage('Link copied to clipboard! 📋', 'success');
+        }
+        
+        function copyServerLink() {
+            const link = document.getElementById('serverLink').textContent;
+            navigator.clipboard.writeText(link);
+            showMessage('Server link copied! 📋', 'success');
+        }
+        
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message ${type}`;
+            setTimeout(() => {
+                msg.className = 'message';
+            }, 3000);
+        }
+        
+        // Load apps on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadApps();
+            updateStats();
+        });
+    </script>
+</body>
+</html>
